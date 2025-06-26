@@ -1,2 +1,40 @@
-# AI-Project
-This dataset contains survey data about the impact of social media addiction on human relationships, including metrics on mental health, relationship quality, and screen time. It includes both categorical and numerical variables, making it suitable for classification and regression machine learning models
+# 🧠 AI Project – Social Media Addiction & Machine Learning
+
+## 📌 Περιγραφή Dataset
+Το dataset με τίτλο **"Students Social Media Addiction"** περιλαμβάνει δεδομένα από φοιτητές σχετικά με τον χρόνο χρήσης των social media, την επίδρασή τους στην ψυχική υγεία, τις ακαδημαϊκές επιδόσεις, τον ύπνο, τις διαπροσωπικές σχέσεις και άλλα. Προέρχεται από την πλατφόρμα [Kaggle](https://www.kaggle.com/) και είναι κατάλληλο για προβλήματα ταξινόμησης (classification).
+
+## 🔍 Τι μοντέλο φτιάξαμε
+Χρησιμοποιήθηκε αλγόριθμος **Random Forest Classifier** για να προβλέψουμε το **επίπεδο εθισμού στα social media** (Low, Medium, High), με βάση τα χαρακτηριστικά του κάθε φοιτητή. Η ακρίβεια του μοντέλου ξεπέρασε το **99%**.
+
+## 🤖 Τι κάνει ο AI Agent
+Ο Agent:
+- Δέχεται χαρακτηριστικά ενός χρήστη (φοιτητή)
+- Χρησιμοποιεί το εκπαιδευμένο μοντέλο για να προβλέψει το επίπεδο εθισμού
+- Εξηγεί σε φυσική γλώσσα τα χαρακτηριστικά που επηρέασαν την πρόβλεψη
+- Παρέχει συμβουλές και feedback για βελτίωση
+
+## 📸 Screenshots
+### 1️⃣ Πρόβλεψη από τον Agent
+Ο χρήστης εισάγει δεδομένα και παίρνει απάντηση όπως:
+
+> Η πρόβλεψη του μοντέλου είναι ότι έχεις **High** επίπεδο εθισμού.  
+> Αυτό οφείλεται σε χαρακτηριστικά όπως:
+> - Πολύ υψηλή καθημερινή χρήση (π.χ. 6 ώρες)
+> - Χαμηλές ώρες ύπνου
+> - Αρκετοί καυγάδες λόγω social media  
+> 👉 Προτείνουμε να μειώσεις τον χρόνο οθόνης και να βελτιώσεις τον ύπνο σου.
+
+### 2️⃣ Εκπαίδευση Μοντέλου
+Η Random Forest εκπαιδεύεται με training/test split 80/20 και αξιολογείται με accuracy, precision, recall.
+
+---
+
+## 📂 Φάκελοι & Αρχεία
+- `ML_Model_SocialMedia_Addiction.ipynb`: Το κύριο Google Colab notebook με ML + AI Agent
+- `Students Social Media Addiction.csv`: Το dataset (ανεβασμένο μέσω Colab)
+- `README.md`: Τρέχον αρχείο τεκμηρίωσης
+
+---
+
+✅ Ολοκληρώθηκε το Βήμα 1–4 επιτυχώς!
+
