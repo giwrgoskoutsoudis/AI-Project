@@ -20,22 +20,25 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
+from imblearn.over_sampling import SMOTE
+
 # -----------------------------------------
-# 📂 Βήμα 2: Φόρτωση Dataset (από GitHub)
+# 📂 Βήμα 2: Φόρτωση Dataset
 # -----------------------------------------
 url = "https://raw.githubusercontent.com/giwrgoskoutsoudis/AI-Project/main/Students%20Social%20Media%20Addiction.csv"
 df = pd.read_csv(url)
 
 # -----------------------------------------
-# 👀 Βήμα 3: Εξερεύνηση Δεδομένων
+# 👀 Βήμα 3: Εξερεύνηση
 # -----------------------------------------
-print("Shape:", df.shape)
-print(df.head())
+print("📐 Shape:", df.shape)
+print("🧾 Πρώτες γραμμές:\n", df.head())
+print("\nℹ️ Πληροφορίες:\n")
 print(df.info())
-print(df.isnull().sum())
+print("\n🕳️ Null values:\n", df.isnull().sum())
 
 # -----------------------------------------
-# 🧼 Βήμα 4: Καθαρισμός + Δημιουργία target
+# 🧼 Βήμα 4: Καθαρισμός + Target μετατροπή
 # -----------------------------------------
 def categorize(score):
     if score <= 3:
@@ -46,7 +49,11 @@ def categorize(score):
         return "High"
 
 df["Addicted_Level"] = df["Addicted_Score"].apply(categorize)
-df.drop("Student_ID", axis=1, inplace=True)
+
+if "Student_ID" in df.columns:
+    df.drop("Student_ID", axis=1, inplace=True)
+
+print("\n📊 Κατανομή Κατηγοριών:\n", df["Addicted_Level"].value_counts())
 
 # -----------------------------------------
 # 🔠 Βήμα 5: Κωδικοποίηση Κατηγορικών
@@ -54,132 +61,173 @@ df.drop("Student_ID", axis=1, inplace=True)
 le = LabelEncoder()
 for col in df.columns:
     if df[col].dtype == "object":
-        df[col] = le.fit_transform(df[col].astype(str))
+        df[col] = le.fit_transform(df[col])
 
 # -----------------------------------------
-# 🎯 Βήμα 6: Ορισμός Χ και y
+# 🎯 Βήμα 6: Επιλογή Features για εκπαίδευση
 # -----------------------------------------
-X = df.drop(["Addicted_Score", "Addicted_Level"], axis=1)
+selected_features = [
+    "Avg_Daily_Usage_Hours",
+    "Sleep_Hours_Per_Night",
+    "Affects_Academic_Performance",
+    "Conflicts_Over_Social_Media"
+]
+
+X = df[selected_features]
 y = df["Addicted_Level"]
 
 # -----------------------------------------
-# 🧪 Βήμα 7: Χωρισμός Δεδομένων
+# 🧪 Βήμα 7: Train/Test split + SMOTE
 # -----------------------------------------
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+smote = SMOTE(random_state=42)
+X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
+
+print("\n🔁 Κατανομή μετά το SMOTE:\n", pd.Series(y_train_resampled).value_counts())
 
 # -----------------------------------------
 # 🤖 Βήμα 8: Εκπαίδευση Μοντέλου
 # -----------------------------------------
 model = RandomForestClassifier(random_state=42)
-model.fit(X_train, y_train)
+model.fit(X_train_resampled, y_train_resampled)
 
 # -----------------------------------------
 # 📊 Βήμα 9: Αξιολόγηση
 # -----------------------------------------
 y_pred = model.predict(X_test)
+
 print("✅ Accuracy:", accuracy_score(y_test, y_pred))
 print("\n📋 Classification Report:\n", classification_report(y_test, y_pred))
 print("\n📉 Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
 
-# -----------------------------------------
-# 🤖 Step 10: AI Agent – Predict, Explain & Advise
-# -----------------------------------------
+# Confusion Matrix Heatmap
+plt.figure(figsize=(6, 4))
+sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, fmt='d', cmap='Blues')
+plt.title("🔵 Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.tight_layout()
+plt.show()
 
+# -----------------------------------------
+# 📦 Libraries
+# -----------------------------------------
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
 
-# 🔁 Προετοιμασία δεδομένων για εκπαίδευση (1 φορά πριν τον agent)
-df = pd.read_csv("Students Social Media Addiction.csv")
+# -----------------------------------------
+# 🔁 Input Functions
+# -----------------------------------------
 
-def categorize(score):
-    if score <= 3:
-        return 0  # Low
-    elif score <= 6:
-        return 1  # Medium
+def get_valid_float(prompt, min_val=0, max_val=12):
+    while True:
+        try:
+            value = float(input(prompt))
+            if min_val <= value <= max_val:
+                return value
+            else:
+                print(f"⛔ Please enter a number between {min_val} and {max_val}.")
+        except ValueError:
+            print("⛔ Invalid input. Only numbers are allowed.")
+
+def get_valid_yes_no(prompt):
+    while True:
+        answer = input(prompt).strip().lower()
+        if answer in ["yes", "no"]:
+            return 1 if answer == "yes" else 0
+        else:
+            print("⛔ Please answer with 'yes' or 'no'.")
+
+def get_user_input():
+    print("💬 Please answer the following questions honestly:")
+    print("👉 Note: Use numbers between 0 and 12 (e.g., 2.5, 7.0).")
+
+    usage = get_valid_float("1️⃣ How many hours do you use social media daily? (0–12): ")
+    sleep = get_valid_float("2️⃣ How many hours do you sleep every night? (0–12): ")
+    academic = get_valid_yes_no("3️⃣ Does social media affect your academic performance? (yes/no): ")
+    conflicts = get_valid_yes_no("4️⃣ Do you have conflicts with others because of social media? (yes/no): ")
+
+    return {
+        "Avg_Daily_Usage_Hours": usage,
+        "Sleep_Hours_Per_Night": sleep,
+        "Affects_Academic_Performance": academic,
+        "Conflicts_Over_Social_Media": conflicts
+    }
+
+# -----------------------------------------
+# 🤖 Agent Logic
+# -----------------------------------------
+
+def predict_addiction_level(model, input_data: dict):
+    label_map = {0: "Low", 1: "Medium", 2: "High"}
+    input_df = pd.DataFrame([input_data])
+
+    prediction_encoded = model.predict(input_df)[0]
+    prediction = label_map.get(prediction_encoded, "Unknown")
+
+    # 📍 Explanation
+    explanation = []
+    if input_data["Avg_Daily_Usage_Hours"] > 4:
+        explanation.append("Your daily social media usage is high.")
+    if input_data["Sleep_Hours_Per_Night"] < 6:
+        explanation.append("Your sleep duration is lower than the recommended amount.")
+    if input_data["Affects_Academic_Performance"] == 1:
+        explanation.append("Your academic performance is affected by social media.")
+    if input_data["Conflicts_Over_Social_Media"] == 1:
+        explanation.append("You experience conflicts due to social media use.")
+
+    if not explanation:
+        explanation.append("No significant risk factors were detected.")
+
+    # 💡 Advice
+    advice = []
+    if input_data["Avg_Daily_Usage_Hours"] > 4:
+        advice.append("Try to reduce your daily social media usage.")
+    if input_data["Sleep_Hours_Per_Night"] < 6:
+        advice.append("Prioritize sleep — aim for at least 7–8 hours.")
+    if input_data["Affects_Academic_Performance"] == 1:
+        advice.append("Manage your time better to maintain academic performance.")
+    if input_data["Conflicts_Over_Social_Media"] == 1:
+        advice.append("Talk to friends or family about setting healthy boundaries.")
+
+    if not advice:
+        advice.append("Your social media usage appears balanced. Keep it up!")
+
+    # 🔄 What-if: simulate better sleep
+    what_if_data = input_data.copy()
+    what_if_data["Sleep_Hours_Per_Night"] = 8
+    what_if_pred = model.predict(pd.DataFrame([what_if_data]))[0]
+    what_if_label = label_map[what_if_pred]
+
+    if what_if_label != prediction:
+        what_if_message = f"❓ If you slept 8 hours, the prediction would change to: **{what_if_label}**"
     else:
-        return 2  # High
+        what_if_message = "❓ Even with 8 hours of sleep, the prediction would remain the same."
 
-df["Addicted_Level"] = df["Addicted_Score"].apply(categorize)
-df.drop("Student_ID", axis=1, inplace=True)
+    # 📝 Report
+    report = f"""
+📌 **User Report**
+Predicted Addiction Level: **{prediction}**
 
-le = LabelEncoder()
-for col in df.columns:
-    if df[col].dtype == "object":
-        df[col] = le.fit_transform(df[col].astype(str))
+📍 Explanation:
+- {'; '.join(explanation)}
 
-X = df.drop(["Addicted_Score", "Addicted_Level"], axis=1)
-y = df["Addicted_Level"]
+💡 Suggestions:
+- {'; '.join(advice)}
 
-model = RandomForestClassifier(random_state=42)
-model.fit(X, y)
+🔄 What-if Analysis:
+- {what_if_message}
+"""
+    return report.strip()
 
-# 🚀 Start AI Agent interaction
-print("📋 Σε παρακαλώ απάντησε στις παρακάτω ερωτήσεις για να γίνει πρόβλεψη:")
+# -----------------------------------------
+# ▶️ Run Agent (Assuming model already trained)
+# -----------------------------------------
 
-# Είσοδοι χρήστη
-age = int(input("🔢 Πόσο χρονών είσαι; "))
-gender = input("⚧️ Φύλο (Male/Female): ")
-academic_level = input("🎓 Ακαδημαϊκό επίπεδο (Undergraduate/Graduate): ")
-country = input("🌍 Χώρα: ")
-daily_usage = float(input("📱 Ώρες χρήσης social media ανά ημέρα (1, 2, 3, 4, 5 etc): "))
-platform = input("📌 Πλατφόρμα που χρησιμοποιείς πιο πολύ (Instagram, Facebook etc): ")
-academic_affect = input("📚 Επηρεάζει τις σπουδές σου; (Yes/No): ")
-sleep_hours = float(input("😴 Ώρες ύπνου ανά νύχτα: "))
-mental_score = int(input("🧠 Ψυχική υγεία (1-10): "))
-relationship = input("💞 Κατάσταση σχέσης (Single/In Relationship): ")
-conflicts = int(input("💬 Διαφωνίες λόγω social media ανά εβδομάδα (1-10): "))
+user_data = get_user_input()
+result = predict_addiction_level(model, user_data)
 
-# 🔄 Δημιουργία DataFrame εισόδου
-user_input = {
-    "Age": age,
-    "Gender": gender,
-    "Academic_Level": academic_level,
-    "Country": country,
-    "Avg_Daily_Usage_Hours": daily_usage,
-    "Most_Used_Platform": platform,
-    "Affects_Academic_Performance": academic_affect,
-    "Sleep_Hours_Per_Night": sleep_hours,
-    "Mental_Health_Score": mental_score,
-    "Relationship_Status": relationship,
-    "Conflicts_Over_Social_Media": conflicts
-}
-user_df = pd.DataFrame([user_input])
-
-# Κωδικοποίηση
-for col in user_df.columns:
-    if user_df[col].dtype == "object":
-        user_df[col] = le.fit_transform(user_df[col].astype(str))
-
-# 🔮 Πρόβλεψη
-prediction = model.predict(user_df)[0]
-level_map = {0: "Low", 1: "Medium", 2: "High"}
-predicted_level = level_map.get(prediction, prediction)
-
-# 📢 Feedback
-print(f"\n🔍 Το μοντέλο προβλέπει ότι έχεις **{predicted_level}** επίπεδο εθισμού στα social media.")
-
-# 🧠 Εξήγηση με βάση input
-if daily_usage > 5:
-    print("💬 Η καθημερινή χρήση άνω των 5 ωρών επηρεάζει σημαντικά τον εθισμό.")
-if sleep_hours < 6:
-    print("💤 Ο λίγος ύπνος σχετίζεται με υψηλότερο επίπεδο εθισμού.")
-if academic_affect.lower() == "yes":
-    print("📚 Επηρεάζονται οι σπουδές σου – αυτό σχετίζεται με υψηλό επίπεδο χρήσης.")
-if conflicts > 2:
-    print("💢 Οι συγκρούσεις λόγω social media είναι δείγμα προβληματικής χρήσης.")
-
-# ❓ What-if analysis
-print("\n🧪 Τι θα γινόταν αν περιόριζες τη χρήση σε 2 ώρες την ημέρα;")
-user_df_copy = user_df.copy()
-user_df_copy["Avg_Daily_Usage_Hours"] = 2
-what_if_pred = model.predict(user_df_copy)[0]
-what_if_level = level_map.get(what_if_pred, what_if_pred)
-print(f"➡️ Η πρόβλεψη τότε θα ήταν: {what_if_level}")
-
-# 📄 Mini Report
-print("\n📄 Συνοπτικό Feedback:")
-print(f"- Ηλικία: {age}, Ύπνος: {sleep_hours} ώρες, Ψυχική υγεία: {mental_score}/10")
-print(f"- Πλατφόρμα: {platform}, Καθημερινή χρήση: {daily_usage} ώρες")
-print(f"- Πρόβλεψη μοντέλου: {predicted_level}")
-print("- Σύσταση: Βελτίωσε την ποιότητα ύπνου και μείωσε τη χρήση social media όπου είναι δυνατό.")
+print("\n===========================")
+print("📄 Final Report:")
+print("===========================\n")
+print(result)
